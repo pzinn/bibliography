@@ -207,11 +207,12 @@ TEMPLATE = """<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
-      --fg: #222;
-      --muted: #666;
-      --border: #ddd;
-      --bg-soft: #f8f8f8;
-      --link: #0b57d0;
+      --fg: #e8e8e8;
+      --muted: #aaaaaa;
+      --border: #444;
+      --bg-soft: #111;
+      --bg: #000;
+      --link: #7db7ff;
       --maxw: 1000px;
     }
     html { box-sizing: border-box; }
@@ -222,7 +223,7 @@ TEMPLATE = """<!doctype html>
       font-family: Georgia, "Times New Roman", serif;
       color: var(--fg);
       line-height: 1.45;
-      background: white;
+      background: var(--bg);
     }
     .wrap {
       max-width: var(--maxw);
@@ -274,7 +275,7 @@ TEMPLATE = """<!doctype html>
       height: auto;
       display: block;
       border: 1px solid var(--border);
-      background: #fff;
+      background: #000;
     }
     .title {
       font-size: 1.1rem;
@@ -301,6 +302,12 @@ TEMPLATE = """<!doctype html>
       color: var(--link);
     }
     a { color: var(--link); }
+    a:visited { color: #b08cff; }
+    code {
+      background: #111;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+    }
     @media (max-width: 720px) {
       .toc ul { columns: 1; }
       .pub, .pub.noimg {
@@ -389,16 +396,20 @@ def build() -> None:
     themes = []
     for theme_name, theme_entries in grouped.items():
         theme_entries.sort(key=lambda e: (-e["year"], e["title"].lower()))
+        most_recent_year = max((e["year"] for e in theme_entries), default=0)
         themes.append(
             {
                 "name": theme_name,
                 "slug": slugify(theme_name),
                 "count": len(theme_entries),
                 "entries": theme_entries,
+                "most_recent_year": most_recent_year,
             }
         )
 
-    themes.sort(key=lambda t: t["name"].lower())
+    themes.sort(
+        key=lambda t: (-t["most_recent_year"], t["name"].lower())
+    )
 
     SITE_DIR.mkdir(parents=True, exist_ok=True)
     (SITE_DIR / ".nojekyll").write_text("", encoding="utf-8")
@@ -409,7 +420,6 @@ def build() -> None:
 
     (SITE_DIR / "index.html").write_text(html_out, encoding="utf-8")
     print(f"Wrote {SITE_DIR / 'index.html'}")
-
 
 if __name__ == "__main__":
     build()
