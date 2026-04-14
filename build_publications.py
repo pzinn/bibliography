@@ -459,42 +459,29 @@ EMBED_CSS = """
   outline:1px solid #6a4f38;
   outline-offset:-1px;
 }
-.pzpub-thumb,
-.pzpub-root .pzpub-thumb{
+.pzpub-thumb{
   width:180px;
   height:140px;
   min-height:0;
-  display:flex !important;
-  align-items:flex-start !important;
-  justify-content:flex-start !important;
-  align-self:start;
-  justify-self:start;
   padding:0;
   margin:0;
-  text-align:left !important;
+  text-align:left;
 }
-.pzpub-thumb img,
-.pzpub-root .pzpub-thumb img{
+.pzpub-thumb img{
   width:100%;
   height:100%;
   object-fit:contain;
   object-position:left top;
-  display:block !important;
+  display:block;
   cursor:zoom-in;
   border:none;
   outline:none;
   box-shadow:none;
   background:transparent;
 }
-.pzpub-meta,
-.pzpub-root .pzpub-meta{
-  display:grid;
-  row-gap:0.25rem;
-  align-content:start;
+.pzpub-meta{
   min-height:100%;
-  align-self:start;
-  justify-self:stretch;
-  text-align:left !important;
+  text-align:left;
 }
 .pzpub-paper-title{
   font-size:1.25rem;
