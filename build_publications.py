@@ -379,10 +379,22 @@ EMBED_CSS = """
 .pzpub-root.pzpub-embedded{
   padding:1rem 0 2rem;
 }
+.pzpub-root.pzpub-toc-right{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 280px;
+  grid-template-areas:
+    "title title"
+    "content toc";
+  column-gap:1.5rem;
+  align-items:start;
+}
 .pzpub-title{
   margin:0 0 0.45rem;
   font-size:2.35rem;
   letter-spacing:0.01em;
+}
+.pzpub-root.pzpub-toc-right .pzpub-title{
+  grid-area:title;
 }
 .pzpub-toc{
   background:var(--pzpub-bg-soft);
@@ -390,13 +402,31 @@ EMBED_CSS = """
   padding:1rem 1.1rem;
   margin:1.2rem 0 2.4rem;
 }
+.pzpub-root.pzpub-toc-right .pzpub-toc{
+  grid-area:toc;
+  margin:0;
+  position:sticky;
+  top:1rem;
+}
 .pzpub-toc ul{
   margin:0.5rem 0 0;
   padding-left:1.2rem;
   columns:2;
 }
+.pzpub-root.pzpub-toc-right .pzpub-toc ul{
+  columns:1;
+}
 .pzpub-theme{
   margin-top:2.8rem;
+}
+.pzpub-content{
+  min-width:0;
+}
+.pzpub-root.pzpub-toc-right .pzpub-content{
+  grid-area:content;
+}
+.pzpub-root.pzpub-toc-right .pzpub-theme:first-of-type{
+  margin-top:0;
 }
 .pzpub-theme-title{
   border-bottom:1px solid var(--pzpub-border);
@@ -522,6 +552,7 @@ EMBED_CSS = """
   font-size:1em;
 }
 @media (max-width:720px){
+  .pzpub-root.pzpub-toc-right{display:block}
   .pzpub-toc ul{columns:1}
   .pzpub-item{grid-template-columns:1fr}
   .pzpub-thumb{width:min(260px,100%);min-height:0;height:auto}
@@ -585,6 +616,16 @@ EMBED_JS = f"""(function () {{
       return parseFlag(params.get(paramName), fallback);
     }}
     return attrFlag(target, attrName, fallback);
+  }}
+
+  function optionValue(target, paramName, attrName, fallback) {{
+    const params = scriptParams();
+    if (params.has(paramName)) {{
+      const value = params.get(paramName);
+      return value === null || value === "" ? fallback : String(value).trim();
+    }}
+    const value = target.getAttribute(attrName);
+    return value === null || value === "" ? fallback : String(value).trim();
   }}
 
   function ensureCss(base) {{
@@ -771,12 +812,14 @@ EMBED_JS = f"""(function () {{
       standalone: optionFlag(target, "standalone", "data-pzjpub-standalone", false),
       showTitle: optionFlag(target, "showTitle", "data-pzjpub-show-title", true),
       showBibtex: optionFlag(target, "showBibtex", "data-pzjpub-show-bibtex", true),
-      showAbstract: optionFlag(target, "showAbstract", "data-pzjpub-show-abstract", true)
+      showAbstract: optionFlag(target, "showAbstract", "data-pzjpub-show-abstract", true),
+      tocPosition: optionValue(target, "tocPosition", "data-pzjpub-toc-position", "top").toLowerCase()
     }};
 
     target.innerHTML = "";
     target.classList.add("pzpub-root");
     if (!options.standalone) target.classList.add("pzpub-embedded");
+    if (options.tocPosition === "right") target.classList.add("pzpub-toc-right");
 
     if (options.showTitle) {{
       const titleTag = options.standalone ? "h1" : "h2";
@@ -790,6 +833,8 @@ EMBED_JS = f"""(function () {{
     target.appendChild(toc);
 
     const lightbox = buildLightbox(target);
+    const content = el("div", "pzpub-content");
+    target.appendChild(content);
 
     for (const theme of payload.themes || []) {{
       const li = el("li");
@@ -805,7 +850,7 @@ EMBED_JS = f"""(function () {{
       for (const pub of theme.entries || []) {{
         section.appendChild(renderPublication(pub, base, options, lightbox));
       }}
-      target.appendChild(section);
+      content.appendChild(section);
     }}
 
     renderMath(target);
@@ -849,6 +894,7 @@ INDEX_HTML = f"""<!doctype html>
     data-pzjpub-show-title="true"
     data-pzjpub-show-bibtex="true"
     data-pzjpub-show-abstract="true"
+    data-pzjpub-toc-position="top"
   ></div>
   <script src="publications-data.js"></script>
   <script src="embed.js"></script>
