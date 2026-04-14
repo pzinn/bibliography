@@ -428,11 +428,18 @@ EMBED_CSS = """
 .pzpub-root.pzpub-toc-right .pzpub-theme:first-of-type{
   margin-top:0;
 }
-.pzpub-theme-title{
+.pzpub-theme-title,
+.pzpub-root .pzpub-theme-title,
+.pzpub-root h1.pzpub-title,
+.pzpub-root h2.pzpub-title,
+.pzpub-root h2.pzpub-theme-title,
+.pzpub-root h3.pzpub-theme-title{
   border-bottom:1px solid var(--pzpub-border);
   padding-bottom:0.4rem;
   margin:0 0 1.1rem;
   font-size:1.55rem;
+  color:var(--pzpub-fg) !important;
+  text-align:left !important;
 }
 .pzpub-item{
   display:grid;
@@ -441,6 +448,7 @@ EMBED_CSS = """
   padding:1.1rem 0;
   border-bottom:1px solid var(--pzpub-border);
   align-items:start;
+  text-align:left;
   transition:background-color 120ms linear,box-shadow 120ms linear;
 }
 .pzpub-item:hover{
@@ -451,50 +459,62 @@ EMBED_CSS = """
   outline:1px solid #6a4f38;
   outline-offset:-1px;
 }
-.pzpub-thumb{
+.pzpub-thumb,
+.pzpub-root .pzpub-thumb{
   width:180px;
   height:140px;
   min-height:0;
-  display:flex;
-  align-items:flex-start;
-  justify-content:flex-start;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  align-self:start;
+  justify-self:start;
   padding:0;
   margin:0;
+  text-align:left !important;
 }
-.pzpub-thumb img{
+.pzpub-thumb img,
+.pzpub-root .pzpub-thumb img{
   width:100%;
   height:100%;
   object-fit:contain;
   object-position:left top;
-  display:block;
+  display:block !important;
   cursor:zoom-in;
   border:none;
   outline:none;
   box-shadow:none;
   background:transparent;
 }
-.pzpub-meta{
+.pzpub-meta,
+.pzpub-root .pzpub-meta{
   display:grid;
   row-gap:0.25rem;
   align-content:start;
   min-height:100%;
+  align-self:start;
+  justify-self:stretch;
+  text-align:left !important;
 }
 .pzpub-paper-title{
   font-size:1.25rem;
   font-weight:bold;
   line-height:1.35;
   margin:0;
+  text-align:left;
 }
 .pzpub-authors{
   margin:0;
   font-size:1.06rem;
   font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  text-align:left;
 }
 .pzpub-venue{
   color:var(--pzpub-muted);
   margin:0 0 0.1rem;
   font-style:italic;
   font-size:1.02rem;
+  text-align:left;
 }
 .pzpub-links a{
   margin-right:0.9rem;
