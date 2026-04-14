@@ -474,6 +474,7 @@ TEMPLATE = """<!doctype html>
       object-fit: contain;
       object-position: left top;
       display: block;
+      cursor: zoom-in;
       border: none;
       outline: none;
       box-shadow: none;
@@ -494,6 +495,7 @@ TEMPLATE = """<!doctype html>
     .authors {
       margin-bottom: 0;
       font-size: 1.06rem;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
     .venue {
       color: var(--muted);
@@ -514,6 +516,42 @@ TEMPLATE = """<!doctype html>
       overflow-wrap: anywhere;
       font-size: 0.94rem;
       line-height: 1.35;
+    }
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+    .lightbox.open {
+      display: flex;
+    }
+    .lightbox img {
+      max-width: 94vw;
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 0.8rem;
+      right: 1rem;
+      background: transparent;
+      border: 0;
+      color: #e9dccb;
+      font-size: 2rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
     }
     details {
       margin-top: 0.5rem;
@@ -609,6 +647,10 @@ TEMPLATE = """<!doctype html>
       </section>
     {% endfor %}
   </div>
+  <div id="lightbox" class="lightbox" hidden>
+    <button type="button" class="lightbox-close" aria-label="Close image viewer">&times;</button>
+    <img id="lightbox-image" alt="">
+  </div>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       if (window.renderMathInElement) {
@@ -638,6 +680,52 @@ TEMPLATE = """<!doctype html>
         } else {
           block.removeAttribute("hidden");
           link.textContent = "Hide BibTeX";
+        }
+      });
+
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImage = document.getElementById("lightbox-image");
+      const lightboxClose = lightbox ? lightbox.querySelector(".lightbox-close") : null;
+
+      function openLightbox(src, alt) {
+        if (!lightbox || !lightboxImage) return;
+        lightboxImage.src = src;
+        lightboxImage.alt = alt || "";
+        lightbox.hidden = false;
+        lightbox.classList.add("open");
+      }
+
+      function closeLightbox() {
+        if (!lightbox || !lightboxImage) return;
+        lightbox.classList.remove("open");
+        lightbox.hidden = true;
+        lightboxImage.src = "";
+        lightboxImage.alt = "";
+      }
+
+      document.addEventListener("click", function (ev) {
+        const img = ev.target.closest(".thumb img");
+        if (!img) return;
+        openLightbox(img.currentSrc || img.src, img.alt);
+      });
+
+      if (lightbox) {
+        lightbox.addEventListener("click", function (ev) {
+          if (ev.target === lightbox) {
+            closeLightbox();
+          }
+        });
+      }
+
+      if (lightboxClose) {
+        lightboxClose.addEventListener("click", function () {
+          closeLightbox();
+        });
+      }
+
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && lightbox && !lightbox.hidden) {
+          closeLightbox();
         }
       });
     });
