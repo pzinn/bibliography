@@ -197,6 +197,23 @@ def entry_links(entry: dict) -> dict[str, str]:
     return links
 
 
+def bibtex_entry_without_theme(entry: dict) -> str:
+    entry_type = first_of(entry, "ENTRYTYPE") or "misc"
+    key = first_of(entry, "ID") or "entry"
+    lines = [f"@{entry_type}{{{key},"]
+    for field, value in entry.items():
+        if field in {"ID", "ENTRYTYPE"}:
+            continue
+        if field.lower() == "theme":
+            continue
+        v = str(value).strip()
+        if not v:
+            continue
+        lines.append(f"  {field} = {{{v}}},")
+    lines.append("}")
+    return "\n".join(lines)
+
+
 def venue_string(entry: dict) -> str:
     parts = []
 
@@ -336,6 +353,7 @@ def load_entries() -> list[dict]:
                 "image": site_image,
                 "type": raw.get("ENTRYTYPE", ""),
                 "chronology_key": entry_chronology_key(raw),
+                "bibtex": bibtex_entry_without_theme(raw),
             }
         )
 
@@ -415,6 +433,15 @@ TEMPLATE = """<!doctype html>
       padding: 1.1rem 0;
       border-bottom: 1px solid var(--border);
       align-items: start;
+      transition: background-color 120ms linear, box-shadow 120ms linear;
+    }
+    .pub:hover {
+      background: #2b2117;
+      box-shadow: inset 0 1px 0 #5a4330, inset 0 -1px 0 #5a4330;
+    }
+    .pub:focus-within {
+      outline: 1px solid #6a4f38;
+      outline-offset: -1px;
     }
     .thumb {
       min-height: 0;
@@ -429,7 +456,7 @@ TEMPLATE = """<!doctype html>
     }
     .thumb img {
       width: auto;
-      height: 100px;
+      height: 140px;
       max-width: 100%;
       display: block;
       border: none;
@@ -462,6 +489,16 @@ TEMPLATE = """<!doctype html>
     .links a {
       margin-right: 0.9rem;
       white-space: nowrap;
+    }
+    .bibtex-block {
+      margin: 0.5rem 0 0;
+      padding: 0.6rem 0.7rem;
+      border: 1px solid var(--border);
+      background: #0d0a07;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 0.94rem;
+      line-height: 1.35;
     }
     details {
       margin-top: 0.5rem;
@@ -536,7 +573,13 @@ TEMPLATE = """<!doctype html>
                   {% for label, href in pub.links.items() %}
                     <a href="{{ href }}">{{ label }}</a>
                   {% endfor %}
+                  {% if pub.bibtex %}
+                    <a href="#" class="bibtex-toggle" data-target="bib-{{ pub.key }}">BibTeX</a>
+                  {% endif %}
                 </div>
+              {% endif %}
+              {% if pub.bibtex %}
+                <pre id="bib-{{ pub.key }}" class="bibtex-block" hidden>{{ pub.bibtex }}</pre>
               {% endif %}
               {% if pub.abstract %}
                 <details>
@@ -563,6 +606,24 @@ TEMPLATE = """<!doctype html>
           throwOnError: false
         });
       }
+
+      document.addEventListener("click", function (ev) {
+        const link = ev.target.closest(".bibtex-toggle");
+        if (!link) return;
+        ev.preventDefault();
+        const id = link.getAttribute("data-target");
+        if (!id) return;
+        const block = document.getElementById(id);
+        if (!block) return;
+        const nowHidden = !block.hasAttribute("hidden");
+        if (nowHidden) {
+          block.setAttribute("hidden", "");
+          link.textContent = "BibTeX";
+        } else {
+          block.removeAttribute("hidden");
+          link.textContent = "Hide BibTeX";
+        }
+      });
     });
   </script>
 </body>
