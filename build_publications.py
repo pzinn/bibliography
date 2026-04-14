@@ -144,7 +144,21 @@ def clean_latex_preserving_math(s: str) -> str:
 def split_authors(author_field: str) -> list[str]:
     if not author_field:
         return []
-    authors = [clean_latex_basic(a.strip()) for a in author_field.split(" and ")]
+    def normalize_author_name(name: str) -> str:
+        cleaned = clean_latex_basic(name.strip())
+        if "," not in cleaned:
+            return cleaned
+        parts = [p.strip() for p in cleaned.split(",") if p.strip()]
+        # BibTeX supports:
+        #   Last, First
+        #   Last, Jr, First
+        if len(parts) == 2:
+            return f"{parts[1]} {parts[0]}"
+        if len(parts) >= 3:
+            return f"{parts[2]} {parts[0]} {parts[1]}"
+        return cleaned
+
+    authors = [normalize_author_name(a) for a in author_field.split(" and ")]
     return [a for a in authors if a]
 
 
@@ -368,6 +382,7 @@ TEMPLATE = """<!doctype html>
   <meta charset="utf-8">
   <title>Publications — Paul Zinn-Justin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="generator" content="build_publications.py from pzj.bib">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -402,16 +417,11 @@ TEMPLATE = """<!doctype html>
       font-size: 2.35rem;
       letter-spacing: 0.01em;
     }
-    .intro {
-      color: var(--muted);
-      margin-bottom: 2.1rem;
-      font-size: 1.05rem;
-    }
     .toc {
       background: var(--bg-soft);
       border: 1px solid var(--border);
       padding: 1rem 1.1rem;
-      margin: 1.7rem 0 2.4rem;
+      margin: 1.2rem 0 2.4rem;
     }
     .toc ul {
       margin: 0.5rem 0 0;
@@ -541,11 +551,9 @@ TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
+  <!-- Generated automatically from pzj.bib by build_publications.py -->
   <div class="wrap">
     <h1>Publications</h1>
-    <div class="intro">
-      Generated automatically from <code>pzj.bib</code>.
-    </div>
 
     <div class="toc">
       <strong>Themes</strong>
