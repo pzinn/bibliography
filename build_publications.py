@@ -151,6 +151,65 @@ def venue_string(entry: dict) -> str:
 
     return ", ".join(parts)
 
+def arxiv_sort_key(entry: dict) -> tuple[int, int] | None:
+    """
+    Return a sortable chronological key from an arXiv identifier.
+
+    For modern arXiv ids like:
+      2403.12345
+      2403.12345v2
+    return (2403, 12345)
+
+    For old-style ids like:
+      math/0612345
+      hep-th/9901001
+    return a rough sortable key based on the trailing 7 digits:
+      yymmnnn  -> (yymm, nnn)
+
+    Return None if no usable arXiv id is found.
+    """
+    arxiv = first_of(entry, "arxiv")
+    if not arxiv:
+        eprint = first_of(entry, "eprint")
+        archiveprefix = first_of(entry, "archiveprefix").lower()
+        if eprint and (archiveprefix == "arxiv" or "arxiv" in first_of(entry, "url").lower()):
+            arxiv = eprint
+
+    if not arxiv:
+        url = first_of(entry, "url")
+        m = re.search(r"arxiv\.org/(?:abs|pdf)/([^\s/]+)", url, re.IGNORECASE)
+        if m:
+            arxiv = m.group(1)
+
+    if not arxiv:
+        return None
+
+    arxiv = arxiv.strip()
+
+    # Modern format: 2403.12345 or 2403.12345v2
+    m = re.match(r"^(\d{4})\.(\d{4,5})(?:v\d+)?$", arxiv)
+    if m:
+        return (int(m.group(1)), int(m.group(2)))
+
+    # Old format: math/0612345, hep-th/9901001, etc.
+    m = re.match(r"^[a-z\-]+(?:\.[A-Z]{2})?/(\d{7})(?:v\d+)?$", arxiv, re.IGNORECASE)
+    if m:
+        digits = m.group(1)
+        return (int(digits[:4]), int(digits[4:]))
+
+    return None
+
+def entry_chronology_key(entry: dict) -> tuple[int, int]:
+    """
+    Prefer arXiv chronology; otherwise fall back to year.
+    Larger means more recent.
+    """
+    ak = arxiv_sort_key(entry)
+    if ak is not None:
+        return ak
+
+    year = parse_year(entry)
+    return (year, 0)
 
 def load_entries() -> list[dict]:
     with BIB_FILE.open("r", encoding="utf-8") as f:
@@ -192,6 +251,7 @@ def load_entries() -> list[dict]:
                 "links": links,
                 "image": site_image,
                 "type": raw.get("ENTRYTYPE", ""),
+                "chronology_key": entry_chronology_key(raw),
             }
         )
 
@@ -395,20 +455,22 @@ def build() -> None:
 
     themes = []
     for theme_name, theme_entries in grouped.items():
-        theme_entries.sort(key=lambda e: (-e["year"], e["title"].lower()))
-        most_recent_year = max((e["year"] for e in theme_entries), default=0)
+        theme_entries.sort(
+            key=lambda e: (-e["chronology_key"][0], -e["chronology_key"][1], e["title"].lower())
+        )
+        most_recent_key = max((e["chronology_key"] for e in theme_entries), default=(0, 0))
         themes.append(
             {
                 "name": theme_name,
                 "slug": slugify(theme_name),
                 "count": len(theme_entries),
                 "entries": theme_entries,
-                "most_recent_year": most_recent_year,
+                "most_recent_key": most_recent_key,
             }
         )
 
     themes.sort(
-        key=lambda t: (-t["most_recent_year"], t["name"].lower())
+        key=lambda t: (-t["most_recent_key"][0], -t["most_recent_key"][1], t["name"].lower())
     )
 
     SITE_DIR.mkdir(parents=True, exist_ok=True)
