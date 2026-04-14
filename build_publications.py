@@ -64,6 +64,82 @@ def clean_latex_basic(s: str) -> str:
     return s
 
 
+def clean_latex_preserving_math(s: str) -> str:
+    """
+    Clean lightweight LaTeX in text while preserving inline math expressions.
+
+    Math segments delimited by unescaped `$...$` are kept as-is so KaTeX can
+    render them client-side.
+    """
+    if not s:
+        return ""
+
+    parts: list[tuple[str, str]] = []
+    buf: list[str] = []
+    in_math = False
+    i = 0
+    while i < len(s):
+        ch = s[i]
+        if ch == "$" and (i == 0 or s[i - 1] != "\\"):
+            if in_math:
+                buf.append(ch)
+                parts.append(("math", "".join(buf)))
+                buf = []
+                in_math = False
+            else:
+                if buf:
+                    parts.append(("text", "".join(buf)))
+                    buf = []
+                buf.append(ch)
+                in_math = True
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+
+    if buf:
+        parts.append(("math" if in_math else "text", "".join(buf)))
+
+    cleaned_parts: list[tuple[str, str]] = []
+    for part_type, part in parts:
+        if part_type == "math":
+            cleaned_parts.append((part_type, part))
+        else:
+            cleaned = clean_latex_basic(part)
+            if part[:1].isspace() and cleaned and not cleaned.startswith(" "):
+                cleaned = " " + cleaned
+            if part[-1:].isspace() and cleaned and not cleaned.endswith(" "):
+                cleaned = cleaned + " "
+            cleaned_parts.append((part_type, cleaned))
+
+    joined_parts: list[str] = []
+    left_attach = "([{-/–—"
+    right_attach = ").,;:!?]}-/–—"
+    prev_type: str | None = None
+    for part_type, text in cleaned_parts:
+        if not text:
+            continue
+        if joined_parts:
+            prev_text = joined_parts[-1]
+            if (
+                not prev_text.endswith((" ", "\t", "\n"))
+                and not text.startswith((" ", "\t", "\n"))
+            ):
+                prev_char = prev_text[-1]
+                next_char = text[0]
+                if (
+                    (prev_type == "text" and part_type == "math" and prev_char not in left_attach)
+                    or (prev_type == "math" and part_type == "text" and next_char not in right_attach)
+                    or (prev_type == "math" and part_type == "math")
+                ):
+                    joined_parts.append(" ")
+        joined_parts.append(text)
+        prev_type = part_type
+
+    joined = "".join(joined_parts)
+    return re.sub(r"\s+", " ", joined).strip()
+
+
 def split_authors(author_field: str) -> list[str]:
     if not author_field:
         return []
@@ -151,22 +227,27 @@ def venue_string(entry: dict) -> str:
 
     return ", ".join(parts)
 
+
+def yymm_to_yyyymm(yymm: int) -> int:
+    """
+    Convert arXiv YYMM to YYYYMM on a single timeline.
+
+    Old-style arXiv ids use YYMM with years 91-07. Modern ids also start with
+    YYMM (e.g. 2403.12345). Mapping both onto YYYYMM makes them comparable.
+    """
+    yy = yymm // 100
+    mm = yymm % 100
+    if mm < 1 or mm > 12:
+        return yymm
+    year = 1900 + yy if yy >= 90 else 2000 + yy
+    return year * 100 + mm
+
+
 def arxiv_sort_key(entry: dict) -> tuple[int, int] | None:
     """
     Return a sortable chronological key from an arXiv identifier.
 
-    For modern arXiv ids like:
-      2403.12345
-      2403.12345v2
-    return (2403, 12345)
-
-    For old-style ids like:
-      math/0612345
-      hep-th/9901001
-    return a rough sortable key based on the trailing 7 digits:
-      yymmnnn  -> (yymm, nnn)
-
-    Return None if no usable arXiv id is found.
+    Both modern and old-style arXiv ids are mapped to (YYYYMM, serial).
     """
     arxiv = first_of(entry, "arxiv")
     if not arxiv:
@@ -189,27 +270,30 @@ def arxiv_sort_key(entry: dict) -> tuple[int, int] | None:
     # Modern format: 2403.12345 or 2403.12345v2
     m = re.match(r"^(\d{4})\.(\d{4,5})(?:v\d+)?$", arxiv)
     if m:
-        return (int(m.group(1)), int(m.group(2)))
+        yyyymm = yymm_to_yyyymm(int(m.group(1)))
+        return (yyyymm, int(m.group(2)))
 
-    # Old format: math/0612345, hep-th/9901001, etc.
+    # Old format: math/0612345, hep-th/9901001, cond-mat/0207063, etc.
     m = re.match(r"^[a-z\-]+(?:\.[A-Z]{2})?/(\d{7})(?:v\d+)?$", arxiv, re.IGNORECASE)
     if m:
         digits = m.group(1)
-        return (int(digits[:4]), int(digits[4:]))
+        yyyymm = yymm_to_yyyymm(int(digits[:4]))
+        return (yyyymm, int(digits[4:]))
 
     return None
 
+
 def entry_chronology_key(entry: dict) -> tuple[int, int]:
     """
-    Prefer arXiv chronology; otherwise fall back to year.
+    Prefer arXiv chronology; otherwise fall back to publication year.
     Larger means more recent.
     """
     ak = arxiv_sort_key(entry)
     if ak is not None:
         return ak
-
     year = parse_year(entry)
-    return (year, 0)
+    return (year * 100, 0)
+
 
 def load_entries() -> list[dict]:
     with BIB_FILE.open("r", encoding="utf-8") as f:
@@ -222,7 +306,7 @@ def load_entries() -> list[dict]:
         if not key:
             continue
 
-        title = clean_latex_basic(first_of(raw, "title"))
+        title = clean_latex_preserving_math(first_of(raw, "title"))
         authors = split_authors(first_of(raw, "author"))
         theme = clean_latex_basic(first_of(raw, "theme")) or "Other"
         abstract = clean_latex_basic(first_of(raw, "abstract"))
@@ -265,25 +349,29 @@ TEMPLATE = """<!doctype html>
   <meta charset="utf-8">
   <title>Publications — Paul Zinn-Justin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <style>
     :root {
-      --fg: #e8e8e8;
-      --muted: #aaaaaa;
-      --border: #444;
-      --bg-soft: #111;
+      --fg: #ece4d8;
+      --muted: #b9ac9a;
+      --border: #4d4338;
+      --bg-soft: #14110e;
       --bg: #000;
-      --link: #7db7ff;
-      --maxw: 1000px;
+      --link: #e1a36f;
+      --maxw: 1080px;
     }
     html { box-sizing: border-box; }
     *, *:before, *:after { box-sizing: inherit; }
     body {
       margin: 0;
-      padding: 2rem 1rem 4rem;
+      padding: 2.25rem 1.2rem 4.5rem;
       font-family: Georgia, "Times New Roman", serif;
       color: var(--fg);
-      line-height: 1.45;
+      line-height: 1.5;
       background: var(--bg);
+      font-size: 1.08rem;
     }
     .wrap {
       max-width: var(--maxw);
@@ -291,18 +379,20 @@ TEMPLATE = """<!doctype html>
     }
     h1 {
       margin-top: 0;
-      margin-bottom: 0.3rem;
-      font-size: 2rem;
+      margin-bottom: 0.45rem;
+      font-size: 2.35rem;
+      letter-spacing: 0.01em;
     }
     .intro {
       color: var(--muted);
-      margin-bottom: 2rem;
+      margin-bottom: 2.1rem;
+      font-size: 1.05rem;
     }
     .toc {
       background: var(--bg-soft);
       border: 1px solid var(--border);
-      padding: 1rem;
-      margin: 1.5rem 0 2rem;
+      padding: 1rem 1.1rem;
+      margin: 1.7rem 0 2.4rem;
     }
     .toc ul {
       margin: 0.5rem 0 0;
@@ -310,48 +400,67 @@ TEMPLATE = """<!doctype html>
       columns: 2;
     }
     .theme-section {
-      margin-top: 2.5rem;
+      margin-top: 2.8rem;
     }
     .theme-section h2 {
       border-bottom: 1px solid var(--border);
-      padding-bottom: 0.35rem;
-      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      margin-bottom: 1.1rem;
+      font-size: 1.55rem;
     }
     .pub {
       display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 1rem;
-      padding: 1rem 0;
+      grid-template-columns: 180px 1fr;
+      gap: 1.2rem;
+      padding: 1.1rem 0;
       border-bottom: 1px solid var(--border);
-    }
-    .pub.noimg {
-      grid-template-columns: 1fr;
+      align-items: start;
     }
     .thumb {
-      width: 140px;
+      min-height: 0;
+      display: flex;
+      align-items: flex-start;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      outline: none;
+      padding: 0;
+      margin: 0;
     }
     .thumb img {
-      width: 100%;
-      height: auto;
+      width: auto;
+      height: 100px;
+      max-width: 100%;
       display: block;
-      border: 1px solid var(--border);
-      background: #000;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+    }
+    .meta {
+      display: grid;
+      row-gap: 0.25rem;
+      align-content: start;
+      min-height: 100%;
     }
     .title {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       font-weight: bold;
-      margin-bottom: 0.2rem;
+      line-height: 1.35;
+      margin-bottom: 0;
     }
     .authors {
-      margin-bottom: 0.2rem;
+      margin-bottom: 0;
+      font-size: 1.06rem;
     }
     .venue {
       color: var(--muted);
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.1rem;
       font-style: italic;
+      font-size: 1.02rem;
     }
     .links a {
-      margin-right: 0.8rem;
+      margin-right: 0.9rem;
       white-space: nowrap;
     }
     details {
@@ -362,19 +471,26 @@ TEMPLATE = """<!doctype html>
       color: var(--link);
     }
     a { color: var(--link); }
-    a:visited { color: #b08cff; }
+    a:visited { color: #c58758; }
+    .katex {
+      font-size: 1em;
+    }
     code {
-      background: #111;
-      padding: 0.1rem 0.3rem;
+      background: #1a1510;
+      padding: 0.1rem 0.34rem;
       border-radius: 3px;
     }
     @media (max-width: 720px) {
       .toc ul { columns: 1; }
-      .pub, .pub.noimg {
+      .pub {
         grid-template-columns: 1fr;
       }
       .thumb {
-        width: min(260px, 100%);
+        min-height: 0;
+      }
+      .thumb img {
+        height: auto;
+        max-height: 140px;
       }
     }
   </style>
@@ -400,14 +516,14 @@ TEMPLATE = """<!doctype html>
         <h2>{{ theme.name }}</h2>
 
         {% for pub in theme.entries %}
-          <article class="pub{% if not pub.image %} noimg{% endif %}">
+          <article class="pub">
+              <div class="thumb"{% if not pub.image %} aria-hidden="true"{% endif %}>
             {% if pub.image %}
-              <div class="thumb">
                 <img src="{{ pub.image }}" alt="Thumbnail for {{ pub.title }}">
-              </div>
             {% endif %}
+              </div>
 
-            <div>
+            <div class="meta">
               <div class="title">{{ pub.title }}</div>
               {% if pub.authors_text %}
                 <div class="authors">{{ pub.authors_text }}</div>
@@ -434,6 +550,21 @@ TEMPLATE = """<!doctype html>
       </section>
     {% endfor %}
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.renderMathInElement) {
+        window.renderMathInElement(document.body, {
+          delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false},
+            {left: "\\\\(", right: "\\\\)", display: false},
+            {left: "\\\\[", right: "\\\\]", display: true}
+          ],
+          throwOnError: false
+        });
+      }
+    });
+  </script>
 </body>
 </html>
 """
