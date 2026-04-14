@@ -54,6 +54,7 @@ def clean_latex_basic(s: str) -> str:
         r"\\`e": "è",
         r"\\aa": "å",
         r"\\ss": "ß",
+        "--": "—",
     }
     for k, v in replacements.items():
         s = s.replace(k, v)
@@ -444,9 +445,12 @@ TEMPLATE = """<!doctype html>
       outline-offset: -1px;
     }
     .thumb {
+      width: 180px;
+      height: 140px;
       min-height: 0;
       display: flex;
       align-items: flex-start;
+      justify-content: flex-start;
       border: 0;
       background: transparent;
       box-shadow: none;
@@ -455,9 +459,10 @@ TEMPLATE = """<!doctype html>
       margin: 0;
     }
     .thumb img {
-      width: auto;
-      height: 140px;
-      max-width: 100%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: left top;
       display: block;
       border: none;
       outline: none;
@@ -523,11 +528,14 @@ TEMPLATE = """<!doctype html>
         grid-template-columns: 1fr;
       }
       .thumb {
+        width: min(260px, 100%);
         min-height: 0;
+        height: auto;
       }
       .thumb img {
+        width: 100%;
         height: auto;
-        max-height: 140px;
+        object-fit: contain;
       }
     }
   </style>
