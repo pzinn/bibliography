@@ -560,6 +560,7 @@ EMBED_CSS = """
 }
 @media (max-width:720px){
   .pzpub-root.pzpub-toc-right{display:block}
+  .pzpub-root.pzpub-toc-right .pzpub-toc{display:none}
   .pzpub-toc ul{columns:1}
   .pzpub-item{grid-template-columns:1fr}
   .pzpub-thumb{width:min(260px,100%);min-height:0;height:auto}
