@@ -310,7 +310,7 @@ def load_entries() -> list[dict]:
                 "title": clean_latex_preserving_math(first_of(raw, "title")),
                 "authors_text": ", ".join(split_authors(first_of(raw, "author"))),
                 "theme": clean_latex_basic(first_of(raw, "theme")) or "Other",
-                "abstract": clean_latex_basic(first_of(raw, "abstract")),
+                "abstract": clean_latex_preserving_math(first_of(raw, "abstract")),
                 "venue": venue_string(raw),
                 "year": parse_year(raw),
                 "links": entry_links(raw),
