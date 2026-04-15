@@ -1,0 +1,210 @@
+:root{
+  --pzpub-fg:#ece4d8;
+  --pzpub-muted:#b9ac9a;
+  --pzpub-border:#4d4338;
+  --pzpub-bg-soft:#14110e;
+  --pzpub-bg:#000;
+  --pzpub-link:#e1a36f;
+  --pzpub-maxw:1080px;
+}
+.pzpub-root,.pzpub-root *{box-sizing:border-box}
+.pzpub-root{
+  margin:0 auto;
+  max-width:var(--pzpub-maxw);
+  padding:2.25rem 1.2rem 4.5rem;
+  font-family:Georgia,"Times New Roman",serif;
+  color:var(--pzpub-fg);
+  line-height:1.5;
+  background:var(--pzpub-bg);
+  font-size:1.08rem;
+}
+.pzpub-root.pzpub-embedded{
+  padding:1rem 0 2rem;
+}
+.pzpub-root.pzpub-toc-right{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 280px;
+  grid-template-areas:
+    "title title"
+    "content toc";
+  column-gap:1.5rem;
+  align-items:start;
+}
+.pzpub-title{
+  margin:0 0 0.45rem;
+  font-size:2.35rem;
+  letter-spacing:0.01em;
+}
+.pzpub-root.pzpub-toc-right .pzpub-title{
+  grid-area:title;
+}
+.pzpub-toc{
+  background:var(--pzpub-bg-soft);
+  border:1px solid var(--pzpub-border);
+  padding:1rem 1.1rem;
+  margin:1.2rem 0 2.4rem;
+}
+.pzpub-root.pzpub-toc-right .pzpub-toc{
+  grid-area:toc;
+  margin:0;
+  position:sticky;
+  top:1rem;
+}
+.pzpub-toc ul{
+  margin:0.5rem 0 0;
+  padding-left:1.2rem;
+  columns:2;
+}
+.pzpub-root.pzpub-toc-right .pzpub-toc ul{
+  columns:1;
+}
+.pzpub-theme{
+  margin-top:2.8rem;
+}
+.pzpub-content{
+  min-width:0;
+}
+.pzpub-root.pzpub-toc-right .pzpub-content{
+  grid-area:content;
+}
+.pzpub-root.pzpub-toc-right .pzpub-theme:first-of-type{
+  margin-top:0;
+}
+.pzpub-theme-title,
+.pzpub-root .pzpub-theme-title,
+.pzpub-root h1.pzpub-title,
+.pzpub-root h2.pzpub-title,
+.pzpub-root h2.pzpub-theme-title,
+.pzpub-root h3.pzpub-theme-title{
+  border-bottom:1px solid var(--pzpub-border);
+  padding-bottom:0.4rem;
+  margin:0 0 1.1rem;
+  font-size:1.55rem;
+  color:var(--pzpub-fg) !important;
+  text-align:left !important;
+}
+.pzpub-item{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  gap:1.2rem;
+  padding:1.1rem 0;
+  border-bottom:1px solid var(--pzpub-border);
+  align-items:start;
+  text-align:left;
+  transition:background-color 120ms linear,box-shadow 120ms linear;
+}
+.pzpub-item:hover{
+  background:#2b2117;
+  box-shadow:inset 0 1px 0 #5a4330,inset 0 -1px 0 #5a4330;
+}
+.pzpub-item:focus-within{
+  outline:1px solid #6a4f38;
+  outline-offset:-1px;
+}
+.pzpub-thumb{
+  width:180px;
+  height:140px;
+  min-height:0;
+  padding:0;
+  margin:0;
+  text-align:left;
+}
+.pzpub-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:left top;
+  display:block;
+  cursor:zoom-in;
+  border:none;
+  outline:none;
+  box-shadow:none;
+  background:transparent;
+}
+.pzpub-meta{
+  min-height:100%;
+  text-align:left;
+}
+.pzpub-paper-title{
+  font-size:1.25rem;
+  font-weight:bold;
+  line-height:1.35;
+  margin:0;
+  text-align:left;
+}
+.pzpub-authors{
+  margin:0;
+  font-size:1.06rem;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  text-align:left;
+}
+.pzpub-venue{
+  color:var(--pzpub-muted);
+  margin:0 0 0.1rem;
+  font-style:italic;
+  font-size:1.02rem;
+  text-align:left;
+}
+.pzpub-links a{
+  margin-right:0.9rem;
+  white-space:nowrap;
+}
+.pzpub-bibtex{
+  margin:0.5rem 0 0;
+  padding:0.6rem 0.7rem;
+  border:1px solid var(--pzpub-border);
+  background:#0d0a07;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font-size:0.94rem;
+  line-height:1.35;
+}
+.pzpub-summary{
+  cursor:pointer;
+  color:var(--pzpub-link);
+}
+.pzpub-root a{color:var(--pzpub-link)}
+.pzpub-root a:visited{color:#c58758}
+.pzpub-lightbox{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.92);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:2rem;
+}
+.pzpub-lightbox.open{
+  display:flex;
+}
+.pzpub-lightbox img{
+  max-width:94vw;
+  max-height:90vh;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+}
+.pzpub-lightbox-close{
+  position:absolute;
+  top:0.8rem;
+  right:1rem;
+  background:transparent;
+  border:0;
+  color:#e9dccb;
+  font-size:2rem;
+  line-height:1;
+  cursor:pointer;
+  padding:0.2rem 0.4rem;
+}
+.pzpub-katex{
+  font-size:1em;
+}
+@media (max-width:720px){
+  .pzpub-root.pzpub-toc-right{display:block}
+  .pzpub-root.pzpub-toc-right .pzpub-toc{display:none}
+  .pzpub-toc ul{columns:1}
+  .pzpub-item{grid-template-columns:1fr}
+  .pzpub-thumb{width:min(260px,100%);min-height:0;height:auto}
+  .pzpub-thumb img{width:100%;height:auto;object-fit:contain}
+}
