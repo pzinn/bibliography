@@ -220,49 +220,27 @@
     return link;
   }
 
-  function buildLightbox(root) {
-    const lightbox = el("div", "pzpub-lightbox");
-    const close = el("button", "pzpub-lightbox-close");
-    close.type = "button";
-    close.setAttribute("aria-label", "Close image viewer");
-    close.innerHTML = "&times;";
-    const img = document.createElement("img");
-    lightbox.appendChild(close);
-    lightbox.appendChild(img);
-    root.appendChild(lightbox);
-
-    function closeLightbox() {
-      lightbox.classList.remove("open");
-      img.src = "";
-      img.alt = "";
-    }
-
-    close.addEventListener("click", closeLightbox);
-    lightbox.addEventListener("click", (ev) => {
-      if (ev.target === lightbox) closeLightbox();
-    });
-    document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
-    });
-
-    return {
-      open(src, alt) {
-        img.src = src;
-        img.alt = alt || "";
-        lightbox.classList.add("open");
-      }
-    };
-  }
-
-  function renderPublication(pub, base, options, lightbox) {
+  function renderPublication(pub, base, options, imageRegistry) {
     const article = el("article", "pzpub-item");
     const thumb = el("div", "pzpub-thumb");
     if (pub.image) {
       const img = document.createElement("img");
       img.src = new URL(pub.image, base).href;
       img.alt = `Thumbnail for ${pub.title || "publication"}`;
-      img.addEventListener("click", () => lightbox.open(img.src, img.alt));
+      img.addEventListener("click", () => {
+        const expanded = article.classList.contains("pzpub-item-expanded");
+        for (const item of imageRegistry) {
+          if (item !== article) {
+            item.classList.remove("pzpub-item-expanded");
+            const otherThumb = item.querySelector(".pzpub-thumb");
+            if (otherThumb) otherThumb.classList.remove("pzpub-thumb-expanded");
+          }
+        }
+        article.classList.toggle("pzpub-item-expanded", !expanded);
+        thumb.classList.toggle("pzpub-thumb-expanded", !expanded);
+      });
       thumb.appendChild(img);
+      imageRegistry.push(article);
     } else {
       thumb.setAttribute("aria-hidden", "true");
     }
@@ -341,8 +319,8 @@
     toc.appendChild(tocList);
     target.appendChild(toc);
 
-    const lightbox = buildLightbox(target);
     const content = el("div", "pzpub-content");
+    const imageRegistry = [];
     target.appendChild(content);
 
     for (const theme of payload.themes || []) {
@@ -357,7 +335,7 @@
       section.appendChild(el(headingTag, "pzpub-theme-title", theme.name));
 
       for (const pub of theme.entries || []) {
-        section.appendChild(renderPublication(pub, base, options, lightbox));
+        section.appendChild(renderPublication(pub, base, options, imageRegistry));
       }
       content.appendChild(section);
     }
