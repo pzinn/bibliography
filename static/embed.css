@@ -83,11 +83,14 @@
   color:var(--pzpub-fg) !important;
   text-align:left !important;
 }
-.pzpub-item{
+.pzpub-item,
+.pzpub-root .pzpub-item,
+.pzpub-root article.pzpub-item{
   display:grid;
   grid-template-columns:180px 1fr;
   gap:1.2rem;
   padding:1.1rem 0;
+  padding-bottom:1.1rem !important;
   border-bottom:1px solid var(--pzpub-border);
   align-items:start;
   text-align:left;
@@ -121,14 +124,18 @@
   box-shadow:none;
   background:transparent;
 }
-.pzpub-item.pzpub-item-expanded{
+.pzpub-item.pzpub-item-expanded,
+.pzpub-root .pzpub-item.pzpub-item-expanded,
+.pzpub-root article.pzpub-item.pzpub-item-expanded{
   grid-template-columns:minmax(0, max-content) 1fr;
 }
-.pzpub-thumb.pzpub-thumb-expanded{
+.pzpub-thumb.pzpub-thumb-expanded,
+.pzpub-root .pzpub-thumb.pzpub-thumb-expanded{
   width:auto;
   height:auto;
 }
-.pzpub-thumb.pzpub-thumb-expanded img{
+.pzpub-thumb.pzpub-thumb-expanded img,
+.pzpub-root .pzpub-thumb.pzpub-thumb-expanded img{
   width:auto;
   height:auto;
   max-width:min(90vw, 720px);
@@ -164,15 +171,20 @@
   margin-right:0.9rem;
   white-space:nowrap;
 }
-.pzpub-bibtex{
+.pzpub-bibtex,
+.pzpub-root .pzpub-bibtex,
+.pzpub-root pre.pzpub-bibtex{
   margin:0.5rem 0 0;
   padding:0.6rem 0.7rem;
   border:1px solid var(--pzpub-border);
-  background:#0d0a07;
+  background:#0d0a07 !important;
+  color:var(--pzpub-fg) !important;
   white-space:pre-wrap;
   overflow-wrap:anywhere;
   font-size:0.94rem;
   line-height:1.35;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  text-align:left !important;
 }
 .pzpub-summary{
   cursor:pointer;
