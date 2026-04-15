@@ -171,6 +171,9 @@
   margin-right:0.9rem;
   white-space:nowrap;
 }
+.pzpub-details{
+  margin-top:0.45rem;
+}
 .pzpub-bibtex,
 .pzpub-root .pzpub-bibtex,
 .pzpub-root pre.pzpub-bibtex{
@@ -190,8 +193,18 @@
   cursor:pointer;
   color:var(--pzpub-link);
 }
-.pzpub-root a{color:var(--pzpub-link)}
-.pzpub-root a:visited{color:#c58758}
+.pzpub-root a{
+  color:var(--pzpub-link);
+  text-decoration:none !important;
+}
+.pzpub-root a:hover,
+.pzpub-root a:focus{
+  text-decoration:none !important;
+}
+.pzpub-root a:visited{
+  color:#c58758;
+  text-decoration:none !important;
+}
 .pzpub-katex{
   font-size:1em;
 }

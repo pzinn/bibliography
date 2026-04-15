@@ -271,31 +271,24 @@
       hasLinks = true;
     }
 
-    if (options.showBibtex && pub.bibtex) {
-      const bibLink = openLink("BibTeX", "#");
-      const bibBlock = el("pre", "pzpub-bibtex", pub.bibtex);
-      bibBlock.hidden = true;
-      bibLink.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        bibBlock.hidden = !bibBlock.hidden;
-        bibLink.textContent = bibBlock.hidden ? "BibTeX" : "Hide BibTeX";
-      });
-      links.appendChild(bibLink);
-      meta.appendChild(links);
-      meta.appendChild(bibBlock);
-      hasLinks = true;
-    } else if (hasLinks) {
+    if (hasLinks) {
       meta.appendChild(links);
     }
 
     if (options.showAbstract && pub.abstract) {
       const details = document.createElement("details");
-      const summary = el("summary", "pzpub-summary", "Abstract");
-      details.appendChild(summary);
+      details.className = "pzpub-details pzpub-abstract-details";
+      details.appendChild(el("summary", "pzpub-summary", "Abstract"));
       details.appendChild(el("div", "", pub.abstract));
       meta.appendChild(details);
-    } else if (hasLinks && !meta.contains(links)) {
-      meta.appendChild(links);
+    }
+
+    if (options.showBibtex && pub.bibtex) {
+      const details = document.createElement("details");
+      details.className = "pzpub-details pzpub-bibtex-details";
+      details.appendChild(el("summary", "pzpub-summary", "BibTeX"));
+      details.appendChild(el("pre", "pzpub-bibtex", pub.bibtex));
+      meta.appendChild(details);
     }
 
     if (!hasLinks && meta.contains(links)) {
