@@ -227,17 +227,29 @@
       const img = document.createElement("img");
       img.src = new URL(pub.image, base).href;
       img.alt = `Thumbnail for ${pub.title || "publication"}`;
+      function canExpandImage() {
+        const rect = img.getBoundingClientRect();
+        return img.naturalWidth > rect.width + 1 || img.naturalHeight > rect.height + 1;
+      }
+      function updateZoomCursor() {
+        img.style.cursor = canExpandImage() ? "zoom-in" : "default";
+      }
+      img.addEventListener("load", updateZoomCursor);
       img.addEventListener("click", () => {
         const expanded = article.classList.contains("pzpub-item-expanded");
+        if (!expanded && !canExpandImage()) return;
         for (const item of imageRegistry) {
           if (item !== article) {
             item.classList.remove("pzpub-item-expanded");
             const otherThumb = item.querySelector(".pzpub-thumb");
             if (otherThumb) otherThumb.classList.remove("pzpub-thumb-expanded");
+            const otherImg = item.querySelector(".pzpub-thumb img");
+            if (otherImg) otherImg.style.cursor = "zoom-in";
           }
         }
         article.classList.toggle("pzpub-item-expanded", !expanded);
         thumb.classList.toggle("pzpub-thumb-expanded", !expanded);
+        img.style.cursor = expanded ? "zoom-in" : "zoom-out";
       });
       thumb.appendChild(img);
       imageRegistry.push(article);
