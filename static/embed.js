@@ -221,8 +221,8 @@
   }
 
   function renderPublication(pub, base, options, imageRegistry) {
-    const article = el("article", "pzpub-item");
-    const thumb = el("div", "pzpub-thumb");
+    const article = el("article", "pzjpub-item");
+    const thumb = el("div", "pzjpub-thumb");
     if (pub.image) {
       const img = document.createElement("img");
       img.src = new URL(pub.image, base).href;
@@ -236,19 +236,19 @@
       }
       img.addEventListener("load", updateZoomCursor);
       img.addEventListener("click", () => {
-        const expanded = article.classList.contains("pzpub-item-expanded");
+        const expanded = article.classList.contains("pzjpub-item-expanded");
         if (!expanded && !canExpandImage()) return;
         for (const item of imageRegistry) {
           if (item !== article) {
-            item.classList.remove("pzpub-item-expanded");
-            const otherThumb = item.querySelector(".pzpub-thumb");
-            if (otherThumb) otherThumb.classList.remove("pzpub-thumb-expanded");
-            const otherImg = item.querySelector(".pzpub-thumb img");
+            item.classList.remove("pzjpub-item-expanded");
+            const otherThumb = item.querySelector(".pzjpub-thumb");
+            if (otherThumb) otherThumb.classList.remove("pzjpub-thumb-expanded");
+            const otherImg = item.querySelector(".pzjpub-thumb img");
             if (otherImg) otherImg.style.cursor = "zoom-in";
           }
         }
-        article.classList.toggle("pzpub-item-expanded", !expanded);
-        thumb.classList.toggle("pzpub-thumb-expanded", !expanded);
+        article.classList.toggle("pzjpub-item-expanded", !expanded);
+        thumb.classList.toggle("pzjpub-thumb-expanded", !expanded);
         img.style.cursor = expanded ? "zoom-in" : "zoom-out";
       });
       thumb.appendChild(img);
@@ -258,13 +258,13 @@
     }
     article.appendChild(thumb);
 
-    const meta = el("div", "pzpub-meta");
-    meta.appendChild(el("div", "pzpub-paper-title", pub.title || ""));
+    const meta = el("div", "pzjpub-meta");
+    meta.appendChild(el("div", "pzjpub-paper-title", pub.title || ""));
 
-    if (pub.authors_text) meta.appendChild(el("div", "pzpub-authors", pub.authors_text));
-    if (pub.venue) meta.appendChild(el("div", "pzpub-venue", pub.venue));
+    if (pub.authors_text) meta.appendChild(el("div", "pzjpub-authors", pub.authors_text));
+    if (pub.venue) meta.appendChild(el("div", "pzjpub-venue", pub.venue));
 
-    const links = el("div", "pzpub-links");
+    const links = el("div", "pzjpub-links");
     let hasLinks = false;
     for (const [label, href] of Object.entries(pub.links || {})) {
       links.appendChild(openLink(label, href));
@@ -277,17 +277,17 @@
 
     if (options.showAbstract && pub.abstract) {
       const details = document.createElement("details");
-      details.className = "pzpub-details pzpub-abstract-details";
-      details.appendChild(el("summary", "pzpub-summary", "Abstract"));
+      details.className = "pzjpub-details pzjpub-abstract-details";
+      details.appendChild(el("summary", "pzjpub-summary", "Abstract"));
       details.appendChild(el("div", "", pub.abstract));
       meta.appendChild(details);
     }
 
     if (options.showBibtex && pub.bibtex) {
       const details = document.createElement("details");
-      details.className = "pzpub-details pzpub-bibtex-details";
-      details.appendChild(el("summary", "pzpub-summary", "BibTeX"));
-      details.appendChild(el("pre", "pzpub-bibtex", pub.bibtex));
+      details.className = "pzjpub-details pzjpub-bibtex-details";
+      details.appendChild(el("summary", "pzjpub-summary", "BibTeX"));
+      details.appendChild(el("pre", "pzjpub-bibtex", pub.bibtex));
       meta.appendChild(details);
     }
 
@@ -309,35 +309,35 @@
     };
 
     target.innerHTML = "";
-    target.classList.add("pzpub-root");
-    if (!options.standalone) target.classList.add("pzpub-embedded");
-    if (options.tocPosition === "right") target.classList.add("pzpub-toc-right");
+    target.classList.add("pzjpub-root");
+    if (!options.standalone) target.classList.add("pzjpub-embedded");
+    if (options.tocPosition === "right") target.classList.add("pzjpub-toc-right");
 
     if (options.showTitle) {
       const titleTag = options.standalone ? "h1" : "h2";
-      target.appendChild(el(titleTag, "pzpub-title", payload.title || "Publications"));
+      target.appendChild(el(titleTag, "pzjpub-title", payload.title || "Publications"));
     }
 
-    const toc = el("div", "pzpub-toc");
+    const toc = el("div", "pzjpub-toc");
     toc.appendChild(el("strong", "", "Themes"));
     const tocList = el("ul");
     toc.appendChild(tocList);
     target.appendChild(toc);
 
-    const content = el("div", "pzpub-content");
+    const content = el("div", "pzjpub-content");
     const imageRegistry = [];
     target.appendChild(content);
 
     for (const theme of payload.themes || []) {
       const li = el("li");
-      const tocLink = openLink(`${theme.name} (${theme.count})`, `#pzpub-theme-${theme.slug}`);
+      const tocLink = openLink(`${theme.name} (${theme.count})`, `#pzjpub-theme-${theme.slug}`);
       li.appendChild(tocLink);
       tocList.appendChild(li);
 
-      const section = el("section", "pzpub-theme");
-      section.id = `pzpub-theme-${theme.slug}`;
+      const section = el("section", "pzjpub-theme");
+      section.id = `pzjpub-theme-${theme.slug}`;
       const headingTag = options.standalone ? "h2" : "h3";
-      section.appendChild(el(headingTag, "pzpub-theme-title", theme.name));
+      section.appendChild(el(headingTag, "pzjpub-theme-title", theme.name));
 
       for (const pub of theme.entries || []) {
         section.appendChild(renderPublication(pub, base, options, imageRegistry));
