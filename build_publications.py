@@ -575,12 +575,18 @@ EMBED_JS = f"""(function () {{
   const DATA_GLOBAL = "__PZJ_PUBLICATIONS_DATA__";
   const CSS_URL = "embed.css";
   const DATA_URL = "publications-data.js";
+  const JSON_URL = "publications.json";
   const KATEX_CSS = "{KATEX_CSS_URL}";
   const KATEX_JS = "{KATEX_JS_URL}";
   const KATEX_RENDER_JS = "{KATEX_RENDER_JS_URL}";
+  const INITIAL_SCRIPT = document.currentScript || null;
 
   function currentScript() {{
-    return document.currentScript || Array.from(document.querySelectorAll("script[src]")).find((el) => /embed\\.js(?:\\?|$)/.test(el.src));
+    if (INITIAL_SCRIPT && INITIAL_SCRIPT.src) return INITIAL_SCRIPT;
+    return Array.from(document.querySelectorAll("script[src]")).find((el) =>
+      /pzinn\\.github\\.io\\/bibliography\\/embed\\.js(?:\\?|$)/.test(el.src) ||
+      /\\/bibliography\\/embed\\.js(?:\\?|$)/.test(el.src)
+    ) || null;
   }}
 
   function scriptParams() {{
@@ -635,6 +641,52 @@ EMBED_JS = f"""(function () {{
     return value === null || value === "" ? fallback : String(value).trim();
   }}
 
+  function errorMessage(err) {{
+    if (!err) return "Unknown error";
+    if (typeof err === "string") return err;
+    if (err.message) return err.message;
+    try {{
+      return JSON.stringify(err);
+    }} catch (_) {{
+      return String(err);
+    }}
+  }}
+
+  function debugEnabled(target) {{
+    const params = scriptParams();
+    if (params.has("debug")) return parseFlag(params.get("debug"), false);
+    if (target) return attrFlag(target, "data-pzjpub-debug", false);
+    return false;
+  }}
+
+  function reportFailure(target, context, err) {{
+    const info = {{
+      context,
+      message: errorMessage(err),
+      script: currentScript() ? currentScript().src : null,
+      base: scriptBase(),
+      targetFound: !!target,
+      targetId: target ? target.id || null : null
+    }};
+    console.error("pzj publications embed failed", info, err);
+    if (!target) return;
+
+    const debug = debugEnabled(target);
+    const link = `<a href="${{info.base}}">Open full list</a>`;
+    if (debug) {{
+      target.innerHTML =
+        `<div style="color:#f3d9c4;background:#1a0f09;border:1px solid #6a4f38;padding:1rem;font-family:monospace;white-space:pre-wrap">` +
+        `Failed to load publications.\\n` +
+        `context: ${{info.context}}\\n` +
+        `message: ${{info.message}}\\n` +
+        `script: ${{info.script}}\\n` +
+        `base: ${{info.base}}\\n\\n` +
+        `${{link}}</div>`;
+    }} else {{
+      target.innerHTML = `<p>Failed to load publications. ${{link}}</p>`;
+    }}
+  }}
+
   function ensureCss(base) {{
     if (document.getElementById(STYLE_ID)) return;
     const link = document.createElement("link");
@@ -651,22 +703,33 @@ EMBED_JS = f"""(function () {{
       link.href = KATEX_CSS;
       document.head.appendChild(link);
     }}
-    if (!window.katex && !document.querySelector(`script[src="${{KATEX_JS}}"]`)) {{
-      const script = document.createElement("script");
-      script.defer = true;
-      script.src = KATEX_JS;
-      document.head.appendChild(script);
+    function ensureScript(src, readyCheck) {{
+      return new Promise((resolve, reject) => {{
+        if (readyCheck()) {{
+          resolve();
+          return;
+        }}
+        const existing = document.querySelector(`script[src="${{src}}"]`);
+        if (existing) {{
+          existing.addEventListener("load", () => resolve(), {{ once: true }});
+          existing.addEventListener("error", () => reject(new Error(`Failed to load ${{src}}`)), {{ once: true }});
+          return;
+        }}
+        const script = document.createElement("script");
+        script.defer = true;
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load ${{src}}`));
+        document.head.appendChild(script);
+      }});
     }}
-    if (!window.renderMathInElement && !document.querySelector(`script[src="${{KATEX_RENDER_JS}}"]`)) {{
-      const script = document.createElement("script");
-      script.defer = true;
-      script.src = KATEX_RENDER_JS;
-      document.head.appendChild(script);
-    }}
+
+    return ensureScript(KATEX_JS, () => !!window.katex)
+      .then(() => ensureScript(KATEX_RENDER_JS, () => !!window.renderMathInElement));
   }}
 
   function renderMath(root) {{
-    if (!window.renderMathInElement) return;
+    if (!window.katex || !window.renderMathInElement) return;
     window.renderMathInElement(root, {{
       delimiters: [
         {{ left: "$$", right: "$$", display: true }},
@@ -698,6 +761,14 @@ EMBED_JS = f"""(function () {{
       script.onerror = reject;
       document.head.appendChild(script);
     }});
+  }}
+
+  function fetchJsonData(base) {{
+    return fetch(new URL(JSON_URL, base).href, {{ credentials: "omit" }})
+      .then((res) => {{
+        if (!res.ok) throw new Error("Failed to fetch publications.json");
+        return res.json();
+      }});
   }}
 
   function el(tag, cls, text) {{
@@ -867,18 +938,45 @@ EMBED_JS = f"""(function () {{
 
   function main() {{
     const target = getTarget();
-    if (!target) return;
+    if (!target) {{
+      console.error("pzj publications embed: target container not found", {{
+        script: currentScript() ? currentScript().src : null,
+        base: scriptBase()
+      }});
+      return;
+    }}
     const base = scriptBase();
     ensureCss(base);
-    ensureKatexAssets();
-    ensureData(base)
+    const katexReady = ensureKatexAssets()
+      .catch((err) => {{
+        console.warn("pzj publications embed: KaTeX assets failed to load", {{
+          message: errorMessage(err),
+          base
+        }});
+      }});
+    const loadPayload = ensureData(base)
+      .catch((err) => {{
+        console.warn("pzj publications embed: script data load failed, trying JSON fallback", {{
+          message: errorMessage(err),
+          base
+        }});
+        return fetchJsonData(base).catch((jsonErr) => {{
+          jsonErr.context = "json-fallback";
+          jsonErr.previousError = err;
+          throw jsonErr;
+        }});
+      }});
+
+    loadPayload
       .then((payload) => {{
         if (!payload) throw new Error("Missing publications data");
         render(target, payload, base);
+        return katexReady.then(() => {{
+          renderMath(target);
+          setTimeout(() => renderMath(target), 150);
+        }});
       }})
-      .catch(() => {{
-        target.innerHTML = `<p>Failed to load publications. <a href="${{base}}">Open full list</a>.</p>`;
-      }});
+      .catch((err) => reportFailure(target, err && err.context ? err.context : "main", err));
   }}
 
   main();
