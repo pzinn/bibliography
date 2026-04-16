@@ -10,6 +10,7 @@
   const KATEX_JS = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js";
   const KATEX_RENDER_JS = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js";
   const INITIAL_SCRIPT = document.currentScript || null;
+  const MOBILE_WIDTH_QUERY = "(max-width: 720px)";
 
   function currentScript() {
     if (INITIAL_SCRIPT && INITIAL_SCRIPT.src) return INITIAL_SCRIPT;
@@ -227,7 +228,11 @@
       const img = document.createElement("img");
       img.src = new URL(pub.image, base).href;
       img.alt = `Thumbnail for ${pub.title || "publication"}`;
+      function zoomAllowed() {
+        return !window.matchMedia(MOBILE_WIDTH_QUERY).matches;
+      }
       function canExpandImage() {
+        if (!zoomAllowed()) return false;
         const rect = img.getBoundingClientRect();
         return img.naturalWidth > rect.width + 1 || img.naturalHeight > rect.height + 1;
       }
@@ -235,6 +240,13 @@
         img.style.cursor = canExpandImage() ? "zoom-in" : "default";
       }
       img.addEventListener("load", updateZoomCursor);
+      window.addEventListener("resize", () => {
+        if (!zoomAllowed()) {
+          article.classList.remove("pzjpub-item-expanded");
+          thumb.classList.remove("pzjpub-thumb-expanded");
+        }
+        updateZoomCursor();
+      });
       img.addEventListener("click", () => {
         const expanded = article.classList.contains("pzjpub-item-expanded");
         if (!expanded && !canExpandImage()) return;
