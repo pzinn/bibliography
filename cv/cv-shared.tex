@@ -1,0 +1,167 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{etoolbox}
+\providecommand{\cvfontprofile}{newpx}
+\ifdefstring{\cvfontprofile}{libertinus}{%
+  \usepackage{libertinus}
+}{}
+\ifdefstring{\cvfontprofile}{newpx}{%
+  \usepackage{newpxtext,newpxmath}
+}{}
+\ifdefstring{\cvfontprofile}{newtx}{%
+  \usepackage{newtxtext,newtxmath}
+}{}
+\ifdefstring{\cvfontprofile}{garamond}{%
+  \usepackage{ebgaramond}
+  \usepackage[ebgaramond]{newtxmath}
+}{}
+\ifdefstring{\cvfontprofile}{palatino}{%
+  \usepackage{mathpazo}
+  \usepackage[scaled=.92]{helvet}
+}{}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[margin=.82in,top=.72in,bottom=.82in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{needspace}
+\usepackage{fancyhdr}
+\usepackage{eurosym}
+\usepackage{pgffor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\definecolor{cvtext}{HTML}{222222}
+\definecolor{cvmuted}{HTML}{666666}
+\definecolor{cvaccent}{HTML}{365F7D}
+\definecolor{cvrule}{HTML}{B7C4CC}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=cvaccent,
+  linkcolor=cvaccent,
+  citecolor=cvaccent,
+  pdfauthor={Paul Zinn-Justin},
+  pdftitle={Curriculum vitae -- Paul Zinn-Justin}
+}
+\urlstyle{same}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\footnotesize\color{cvmuted}\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+\color{cvtext}
+
+\DeclareRobustCommand{\KaTeX}{\mbox{%
+K\kern-.17em%
+{\sbox0 T\vbox to\ht0{\hbox%
+  {\fontsize{.75em}{1em}\selectfont A}%
+\vss}}%
+\kern-.15em%
+\TeX}}
+
+\newcommand{\cvsection}[1]{%
+  \Needspace{5\baselineskip}%
+  \vspace{1.15em}%
+  {\large\bfseries\scshape\color{cvtext}#1}\par\nobreak
+  \vspace{.28em}%
+  {\color{cvrule}\rule{\linewidth}{.45pt}}\par\nobreak
+  \vspace{.45em}%
+}
+
+\newenvironment{cvchronology}{%
+  \begin{description}[
+    leftmargin=8.2em,
+    labelwidth=6.9em,
+    labelsep=.8em,
+    align=left,
+    font=\normalfont\bfseries\color{cvaccent},
+    itemsep=.38em,
+    parsep=0pt,
+    topsep=.15em
+  ]%
+}{\end{description}}
+\newcommand{\cventry}[2]{\item[#1] #2}
+
+\newlist{cvitems}{itemize}{2}
+\setlist[cvitems,1]{
+  label=\textcolor{cvaccent}{\raisebox{.18ex}{\scriptsize$\bullet$}},
+  leftmargin=1.35em,
+  itemsep=.32em,
+  parsep=0pt,
+  topsep=.2em
+}
+\setlist[cvitems,2]{
+  label=\textcolor{cvmuted}{\scriptsize--},
+  leftmargin=1.45em,
+  itemsep=.18em,
+  parsep=0pt,
+  topsep=.15em
+}
+\newenvironment{cvbullets}{\begin{cvitems}}{\end{cvitems}}
+\newenvironment{cvcompact}{%
+  \begin{cvitems}[itemsep=.12em,topsep=.1em]%
+}{\end{cvitems}}
+
+\makeatletter
+\renewenvironment{thebibliography}[1]{%
+  \cvsection{\refname}%
+  \small
+  \list{\@biblabel{\@arabic\c@enumiv}}{%
+    \settowidth\labelwidth{\@biblabel{100}}%
+    \leftmargin=3.45em
+    \labelsep=.65em
+    \usecounter{enumiv}%
+    \let\p@enumiv\@empty
+    \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+  \sloppy
+  \clubpenalty4000
+  \widowpenalty4000
+  \setlength{\itemsep}{.28em}%
+  \setlength{\parsep}{0pt}%
+}{\endlist}
+\makeatother
+
+\providecommand{\MR}[1]{MR #1}
+\providecommand{\MRhref}[2]{#2}
+\gdef\MRshorten#1 #2MRend{#1}%
+\gdef\MRfirsttwo#1#2{\if#1M%
+MR\else MR#1#2\fi}
+\def\MRfix#1{\MRshorten\MRfirsttwo#1 MRend}
+\renewcommand\MR[1]{\relax\ifhmode\unskip\spacefactor3000 \space\fi
+  \MRhref{\MRfix{#1}}{{\tiny \MRfix{#1}}}}
+\renewcommand{\MRhref}[2]{%
+ \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}}
+\newcommand\arxivref[2]{%
+\href{http://arxiv.org/abs/#1}{#2}}
+
+\newcommand{\cvheader}[1]{%
+\begin{center}
+  {\Huge\bfseries Paul Zinn-Justin}\par
+  \vspace{.18em}
+  {\large Professor, School of Mathematics and Statistics, The University of Melbourne}\par
+  \vspace{.45em}
+  {\small\scshape #1}\par
+  \vspace{.75em}
+  {\small
+  \href{mailto:pzinn@unimelb.edu.au}{pzinn@unimelb.edu.au} \quad
+  \textcolor{cvrule}{|} \quad
+  \url{http://blogs.unimelb.edu.au/paul-zinn-justin/}}\par
+  \vspace{.22em}
+  {\small School of Mathematics and Statistics, The University of Melbourne, VIC 3010, Australia}\par
+  \vspace{.22em}
+  {\small
+  \href{https://orcid.org/0000-0002-6201-9562}{ORCID} \quad
+  \textcolor{cvrule}{|} \quad
+  \href{https://zbmath.org/authors/zinn-justin.paul}{zbMATH} \quad
+  \textcolor{cvrule}{|} \quad
+  \href{https://scholar.google.com/citations?user=nwogn7kAAAAJ}{Google Scholar}}
+\end{center}
+}
