@@ -37,8 +37,6 @@ def clean_latex_basic(s: str) -> str:
     if not s:
         return ""
 
-    s = s.replace("{", "").replace("}", "")
-
     replacements = {
         r"\\&": "&",
         r"\\%": "%",
@@ -58,7 +56,8 @@ def clean_latex_basic(s: str) -> str:
     for k, v in replacements.items():
         s = s.replace(k, v)
 
-    s = re.sub(r"\\[a-zA-Z]+\s*", "", s)
+    s = re.sub(r"\\[a-zA-Z]+\*?(?=\s|[{\[]|$)", "", s)
+    s = s.replace("{", "").replace("}", "")
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
