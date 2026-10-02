@@ -286,11 +286,18 @@ def entry_chronology_key(entry: dict) -> tuple[int, int]:
 
 
 def load_entries() -> list[dict]:
-    with BIB_FILE.open("r", encoding="utf-8") as f:
-        db = bibtexparser.load(f)
+    db = bibtexparser.parse_file(str(BIB_FILE), encoding="utf-8")
+    if db.failed_blocks:
+        errors = "\n".join(
+            f"  line {block.start_line + 1 if block.start_line is not None else '?'}: {block.error}"
+            for block in db.failed_blocks
+        )
+        raise ValueError(f"Could not parse {BIB_FILE.name}:\n{errors}")
 
     processed: list[dict] = []
-    for raw in db.entries:
+    for entry in db.entries:
+        raw = {field.key.lower(): field.value for field in reversed(entry.fields)}
+        raw.update(ID=entry.key, ENTRYTYPE=entry.entry_type)
         key = raw.get("ID", "").strip()
         if not key:
             continue
