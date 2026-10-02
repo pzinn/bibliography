@@ -20,10 +20,6 @@ SITE_IMAGES_DIR = SITE_DIR / "images"
 
 IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"]
 
-KATEX_CSS_URL = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-KATEX_JS_URL = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
-KATEX_RENDER_JS_URL = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
-
 
 def first_of(entry: dict, *keys: str) -> str:
     for key in keys:

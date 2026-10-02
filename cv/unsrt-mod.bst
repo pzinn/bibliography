@@ -1226,6 +1226,86 @@ MACRO {tcs} {"Theoretical Computer Science"}
 
 READ
 
+% Sort ascending, then emit in reverse order below: newest arXiv first.
+% arXiv IDs become YYYYMM + a five-digit serial; use year when unavailable.
+STRINGS { chronology.id chronology.date chronology.serial }
+INTEGERS { chronology.pos chronology.valid }
+
+FUNCTION {chronology.is.digit}
+{ chr.to.int$ duplicate$ #48 < swap$ #57 > or not }
+
+FUNCTION {chronology.sort}
+{ year empty$
+    { "0000" }
+    { year }
+  if$
+  "0000000" * 'sort.key$ :=
+  arxiv empty$ 'skip$
+    { arxiv 'chronology.id :=
+      % Historical IDs contain a category prefix ending in a slash.
+      chronology.id #1 #1 substring$ chronology.is.digit not
+        { #1 'chronology.pos :=
+          { chronology.pos chronology.id text.length$ > not
+            chronology.id chronology.pos #1 substring$ "/" = not and }
+          { chronology.pos #1 + 'chronology.pos := }
+          while$
+          chronology.id chronology.pos #1 + global.max$ substring$
+          'chronology.id :=
+        }
+        'skip$
+      if$
+      chronology.id #1 #4 substring$ 'chronology.date :=
+      chronology.date text.length$ #4 = 'chronology.valid :=
+      #1 'chronology.pos :=
+      { chronology.pos #4 > not chronology.valid and }
+      { chronology.date chronology.pos #1 substring$ chronology.is.digit
+        'chronology.valid :=
+        chronology.pos #1 + 'chronology.pos := }
+      while$
+      chronology.valid
+        { chronology.date #3 #1 substring$ "0" =
+            { chronology.date #4 #1 substring$ "0" = not }
+            { chronology.date #3 #1 substring$ "1" =
+              chronology.date #4 #1 substring$ chr.to.int$ #51 < and }
+          if$ 'chronology.valid := }
+        'skip$
+      if$
+      chronology.valid
+        { chronology.id #5 #1 substring$ "." =
+            { #6 }
+            { #5 }
+          if$ 'chronology.pos :=
+          "" 'chronology.serial :=
+          { chronology.pos chronology.id text.length$ > not
+            chronology.id chronology.pos #1 substring$ "" =
+              { #0 }
+              { chronology.id chronology.pos #1 substring$ chronology.is.digit }
+            if$ and }
+          { chronology.serial chronology.id chronology.pos #1 substring$ *
+            'chronology.serial :=
+            chronology.pos #1 + 'chronology.pos := }
+          while$
+          chronology.serial empty$ 'skip$
+            { { chronology.serial text.length$ #5 < }
+              { "0" chronology.serial * 'chronology.serial := }
+              while$
+              chronology.date #1 #1 substring$ "9" =
+                { "19" }
+                { "20" }
+              if$
+              chronology.date * chronology.serial * 'sort.key$ := }
+          if$
+        }
+        'skip$
+      if$
+    }
+  if$
+  sort.key$ " " * cite$ * 'sort.key$ :=
+}
+
+ITERATE {chronology.sort}
+SORT
+
 STRINGS { longest.label }
 
 INTEGERS { number.label longest.label.width }
@@ -1256,7 +1336,7 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-  "\let\oldbibitem=\bibitem\renewcommand{\bibitem}{\addtocounter{enumiv}{-2}\oldbibitem}\begin{thebibliography}{"  longest.label  * "}\setcounter{enumiv}{" * number.label #1 - int.to.str$ * "}" *
+  "\let\oldbibitem=\bibitem\renewcommand{\bibitem}{\addtocounter{enumiv}{-2}\oldbibitem}\begin{thebibliography}{"  longest.label  * "}\setcounter{enumiv}{" * number.label int.to.str$ * "}" *
   write$ newline$
 }
 
